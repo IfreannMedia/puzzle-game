@@ -83,6 +83,27 @@ public class MazeManager : MonoBehaviour
         instantiateHappPathTiles();
         splitHappyPathTilesIntoHallways();
         positionHappyPath(hallways);
+        addDeadEnds();
+    }
+
+    private void addDeadEnds()
+    {
+        // 1. get number of dead ends - random range between min and max, also get amount of hallways
+        int deadEndsCount = Random.Range(minDeadEnd, maxDeadEnd);
+        int hallwaysAmount = this.hallways.Count;
+        // 2. iterate for amount of deadends
+        for (int i = 0; i < deadEndsCount; i++)
+        {
+            // 3. create container for dead end tiles
+            GameObject deadEndContainer = new GameObject("deadEnd " + i);
+            int deadEndLength = Random.Range(minDeadEndLength, maxDeadEndLength);
+            // 4. create a list of floor tiles 
+            List<GameObject> deadEndTiles = new List<GameObject>();
+            for (int j = 0; j < deadEndLength; j++)
+            {
+                deadEndTiles.Add(Instantiate(floorTile, deadEndContainer.transform));
+            }
+        }
     }
 
     private void positionHappyPath(List<List<GameObject>> hallways)
