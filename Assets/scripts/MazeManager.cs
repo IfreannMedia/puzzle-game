@@ -88,9 +88,9 @@ public class MazeManager : MonoBehaviour
 
     private void addDeadEnds()
     {
+        List<GameObject> deadEndTiles = new List<GameObject>();
         // 1. get number of dead ends - random range between min and max, also get amount of hallways
         int deadEndsCount = Random.Range(minDeadEnd, maxDeadEnd);
-        int hallwaysAmount = this.hallways.Count;
         // 2. iterate for amount of deadends
         for (int i = 0; i < deadEndsCount; i++)
         {
@@ -98,12 +98,38 @@ public class MazeManager : MonoBehaviour
             GameObject deadEndContainer = new GameObject("deadEnd " + i);
             int deadEndLength = Random.Range(minDeadEndLength, maxDeadEndLength);
             // 4. create a list of floor tiles 
-            List<GameObject> deadEndTiles = new List<GameObject>();
             for (int j = 0; j < deadEndLength; j++)
             {
                 deadEndTiles.Add(Instantiate(floorTile, deadEndContainer.transform));
             }
+
+            // 6. get a randomHallway and start tile for dead end path
+            List<GameObject> hallway = this.hallways[Random.Range(0, this.hallways.Count - 1)];
+            GameObject startTile = hallway[Random.Range(2, hallway.Count - 3)];
+
+            // 7. get a direction, if there is already a tile there, get a different one until I have a direction without a tile
+            //DIRECTION direction = getDirection();
+            Vector3 leftPosition = this.getNextFloorTilePosition(startTile.transform.position, DIRECTION.LEFT);
+            Vector3 frontPosition = this.getNextFloorTilePosition(startTile.transform.position, DIRECTION.FRONT);
+            Vector3 rightPosition = this.getNextFloorTilePosition(startTile.transform.position, DIRECTION.RIGHT);
+
+            //Vector3 tilePosition = this.getNextFloorTilePosition(startTile.transform.position, direction);
+            // currentTile.GetComponent<Transform>().position = tilePosition;
+            Transform[] currentDeadEndTiles = deadEndContainer.GetComponentsInChildren<Transform>();
+
+            for (int j = 0; j < currentDeadEndTiles.Length; j++)
+            {
+                Vector3 previousPosition = j == 0 ? startTile.transform.position : currentDeadEndTiles[j - 1].position;
+                DIRECTION direction = getDirection();
+                Vector3 tilePosition = this.getNextFloorTilePosition(previousPosition, direction);
+                currentDeadEndTiles[j].position = tilePosition;
+            }
         }
+    }
+
+    private bool tilesOverlap(Vector3 tilePosition)
+    {
+        return Physics.OverlapSphere(tilePosition, 1.0f).Length > 0;
     }
 
     private void positionHappyPath(List<List<GameObject>> hallways)
@@ -113,7 +139,7 @@ public class MazeManager : MonoBehaviour
             GameObject hallwayContainer = new GameObject("Hallway " + i);
             Instantiate(hallwayContainer, this.transform);
             Vector3 previousPosition = new Vector3();
-            DIRECTION hallwayDireciton = getDirection(previousPosition);
+            DIRECTION hallwayDireciton = getDirection();
             for (int j = 0; j < hallways[i].Count; j++)
             {
                 GameObject currentTile = hallways[i][j];
@@ -151,6 +177,21 @@ public class MazeManager : MonoBehaviour
                 return Random.Range(0, 2) == 0 ? DIRECTION.LEFT : DIRECTION.FRONT;
             case DIRECTION.LEFT:
                 return Random.Range(0, 2) == 0 ? DIRECTION.RIGHT : DIRECTION.FRONT;
+            default:
+                return DIRECTION.RIGHT;
+        }
+    }
+
+    private DIRECTION getFinalDirection(DIRECTION firstDirection, DIRECTION secondDirection)
+    {
+        switch (firstDirection)
+        {
+            case DIRECTION.FRONT:
+                return secondDirection == DIRECTION.LEFT ? DIRECTION.RIGHT : DIRECTION.LEFT;
+            case DIRECTION.RIGHT:
+                return secondDirection == DIRECTION.FRONT ? DIRECTION.LEFT : DIRECTION.FRONT;
+            case DIRECTION.LEFT:
+                return secondDirection == DIRECTION.RIGHT ? DIRECTION.FRONT : DIRECTION.LEFT;
             default:
                 return DIRECTION.RIGHT;
         }
@@ -212,16 +253,16 @@ public class MazeManager : MonoBehaviour
         }
     }
 
-    private DIRECTION getDirection(Vector3 previousPosition)
+    private DIRECTION getDirection()
     {
         switch (Random.Range(0, 3))
         {
             case 0:
-                return noTilePlacedHere(previousPosition) ? DIRECTION.FRONT : getDirection(previousPosition);
+                return DIRECTION.FRONT;
             case 1:
-                return noTilePlacedHere(previousPosition) ? DIRECTION.RIGHT : getDirection(previousPosition);
+                return DIRECTION.RIGHT;
             case 2:
-                return noTilePlacedHere(previousPosition) ? DIRECTION.LEFT : getDirection(previousPosition);
+                return DIRECTION.LEFT;
             default:
                 return DIRECTION.FRONT;
         }
@@ -245,17 +286,17 @@ public class MazeManager : MonoBehaviour
         return nextPosition;
     }
 
-    bool noTilePlacedHere(Vector3 position)
-    {
-        for (int i = 0; i < floorTiles.Count; i++)
-        {
-            if (floorTiles[i].GetComponent<Transform>().position == position)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
+    //bool noTilePlacedHere(Vector3 position)
+    //{
+    //    for (int i = 0; i < floorTiles.Count; i++)
+    //    {
+    //        if (floorTiles[i].GetComponent<Transform>().position == position)
+    //        {
+    //            return false;
+    //        }
+    //    }
+    //    return true;
+    //}
 
     private Vector3 positionToFront(Vector3 previousPosition)
     {
