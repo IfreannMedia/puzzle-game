@@ -559,12 +559,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxLength: 400
   minLength: 200
-  maxHallwayLength: 15
+  maxHallwayLength: 10
   minHallwayLength: 3
-  maxDeadEnd: 29
-  minDeadEnd: 0
-  maxDeadEndLength: 20
-  minDeadEndLength: 10
+  maxDeadEnd: 40
+  minDeadEnd: 20
+  maxDeadEndLength: 22
+  minDeadEndLength: 3
   start: {x: 3, y: 0, z: 4}
   floorTile: {fileID: 783330441}
   mazeStart: {fileID: 1353006544}

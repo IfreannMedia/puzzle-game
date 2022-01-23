@@ -321,18 +321,6 @@ public class MazeManager : MonoBehaviour
         return nextPosition;
     }
 
-    //bool noTilePlacedHere(Vector3 position)
-    //{
-    //    for (int i = 0; i < floorTiles.Count; i++)
-    //    {
-    //        if (floorTiles[i].GetComponent<Transform>().position == position)
-    //        {
-    //            return false;
-    //        }
-    //    }
-    //    return true;
-    //}
-
     private Vector3 positionToFront(Vector3 previousPosition)
     {
         Vector3 nextPosition = previousPosition;
