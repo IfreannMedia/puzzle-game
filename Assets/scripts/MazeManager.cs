@@ -6,11 +6,11 @@ public class MazeManager : MonoBehaviour
 {
 
     [SerializeField]
-    [Range(50, 400)] 
+    [Range(50, 400)]
     private int maxLength = 100;
 
     [SerializeField]
-    [Range(20, 200)] 
+    [Range(20, 200)]
     private int minLength = 20;
 
     [SerializeField]
@@ -22,11 +22,11 @@ public class MazeManager : MonoBehaviour
     private int minHallwayLength = 5;
 
     [SerializeField]
-    [Range(5, 25)]
+    [Range(20, 40)]
     private int maxDeadEnd = 5;
 
     [SerializeField]
-    [Range(0, 5)]
+    [Range(0, 20)]
     private int minDeadEnd = 0;
 
     [SerializeField]
@@ -36,18 +36,18 @@ public class MazeManager : MonoBehaviour
     [SerializeField]
     [Range(3, 10)]
     private int minDeadEndLength = 10;
-    [SerializeField] 
+    [SerializeField]
     private Vector3 start;
 
     [SerializeField]
     private GameObject floorTile;
-    
-    [SerializeField] 
+
+    [SerializeField]
     BoxCollider mazeStart;
-    
-    [SerializeField] 
+
+    [SerializeField]
     BoxCollider mazeEnd;
-    
+
     private List<GameObject> floorTiles = new List<GameObject>();
 
     private int mazeLength;
@@ -55,7 +55,8 @@ public class MazeManager : MonoBehaviour
     private float tileWidth;
 
     private int currentHallwayLength;
-    List<List<GameObject>> hallways = new List<List<GameObject>>();
+    private List<List<GameObject>> hallways = new List<List<GameObject>>();
+    private List<GameObject> allDeadEndTiles = new List<GameObject>();
 
     void Start()
     {
@@ -88,48 +89,82 @@ public class MazeManager : MonoBehaviour
 
     private void addDeadEnds()
     {
-        List<GameObject> deadEndTiles = new List<GameObject>();
         // 1. get number of dead ends - random range between min and max, also get amount of hallways
         int deadEndsCount = Random.Range(minDeadEnd, maxDeadEnd);
         // 2. iterate for amount of deadends
         for (int i = 0; i < deadEndsCount; i++)
         {
+            Debug.Log("continueing main loop");
             // 3. create container for dead end tiles
             GameObject deadEndContainer = new GameObject("deadEnd " + i);
             int deadEndLength = Random.Range(minDeadEndLength, maxDeadEndLength);
             // 4. create a list of floor tiles 
+            List<GameObject> deadEndTiles = new List<GameObject>();
             for (int j = 0; j < deadEndLength; j++)
             {
                 deadEndTiles.Add(Instantiate(floorTile, deadEndContainer.transform));
             }
 
             // 6. get a randomHallway and start tile for dead end path
-            List<GameObject> hallway = this.hallways[Random.Range(0, this.hallways.Count - 1)];
-            GameObject startTile = hallway[Random.Range(2, hallway.Count - 3)];
+            List<GameObject> happyPathHallway = this.hallways[Random.Range(0, this.hallways.Count - 1)];
+            GameObject startTile = happyPathHallway[Random.Range(1, happyPathHallway.Count - 1)];
 
-            // 7. get a direction, if there is already a tile there, get a different one until I have a direction without a tile
-            //DIRECTION direction = getDirection();
-            Vector3 leftPosition = this.getNextFloorTilePosition(startTile.transform.position, DIRECTION.LEFT);
-            Vector3 frontPosition = this.getNextFloorTilePosition(startTile.transform.position, DIRECTION.FRONT);
-            Vector3 rightPosition = this.getNextFloorTilePosition(startTile.transform.position, DIRECTION.RIGHT);
-
-            //Vector3 tilePosition = this.getNextFloorTilePosition(startTile.transform.position, direction);
-            // currentTile.GetComponent<Transform>().position = tilePosition;
-            Transform[] currentDeadEndTiles = deadEndContainer.GetComponentsInChildren<Transform>();
-
-            for (int j = 0; j < currentDeadEndTiles.Length; j++)
+            // 9. get initial hallway direction
+            DIRECTION direction = getDirection();
+            for (int j = 0; j < deadEndTiles.Count; j++)
             {
-                Vector3 previousPosition = j == 0 ? startTile.transform.position : currentDeadEndTiles[j - 1].position;
-                DIRECTION direction = getDirection();
+                allDeadEndTiles.Add(deadEndTiles[j]);
+                // we are iterating through the tiles now
+                Vector3 previousPosition = j == 0 ? startTile.transform.position : deadEndTiles[j - 1].transform.position;
                 Vector3 tilePosition = this.getNextFloorTilePosition(previousPosition, direction);
-                currentDeadEndTiles[j].position = tilePosition;
+                if (tilesOverlap(tilePosition, happyPathHallway))
+                {
+                    // get all possible posiitons without overlap
+                    Vector3 leftPosition = this.getNextFloorTilePosition(previousPosition, DIRECTION.LEFT);
+                    Vector3 frontPosition = this.getNextFloorTilePosition(previousPosition, DIRECTION.FRONT);
+                    Vector3 rightPosition = this.getNextFloorTilePosition(previousPosition, DIRECTION.RIGHT);
+                    if (!tilesOverlap(leftPosition, happyPathHallway))
+                    {
+                        direction = DIRECTION.LEFT;
+                        tilePosition = leftPosition;
+                    }
+                    else if (!tilesOverlap(frontPosition, happyPathHallway))
+                    {
+                        direction = DIRECTION.FRONT;
+                        tilePosition = frontPosition;
+                    }
+                    else if (!tilesOverlap(rightPosition, happyPathHallway))
+                    {
+                        direction = DIRECTION.RIGHT;
+                        tilePosition = rightPosition;
+                    }
+                }
+                if (tilesOverlap(tilePosition, happyPathHallway))
+                {
+                    Debug.LogWarning("HEY YO WHAT THE HELL YOUR TILES ARE OVERLAPPING");
+                    Debug.Log("breaking...");
+                    break;
+                }
+                if(j % Random.Range(1,9) == 0)
+                {
+                    direction = getDifferentDireciton(direction);
+                }
+                deadEndTiles[j].transform.position = tilePosition;
             }
         }
     }
 
-    private bool tilesOverlap(Vector3 tilePosition)
+    private bool tilesOverlap(Vector3 tilePosition, List<GameObject> happyPathHallway)
     {
-        return Physics.OverlapSphere(tilePosition, 1.0f).Length > 0;
+        //return !happyPathHallway.TrueForAll(element => element.transform.position != tilePosition);
+        //return Physics.OverlapSphere(tilePosition, 1.0f).Length > 0;
+        // tiles overlap if:
+        // the position == any hallway tile posiiton
+        // or
+        // the position = any deadend tile position
+        return allDeadEndTiles.Exists(tile => tile.transform.position == tilePosition) ||
+            !hallways.TrueForAll(hallway => hallway.TrueForAll(tile => tile.transform.position != tilePosition));
+
     }
 
     private void positionHappyPath(List<List<GameObject>> hallways)
