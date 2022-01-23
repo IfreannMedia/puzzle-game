@@ -559,7 +559,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxLength: 400
   minLength: 200
-  maxDeadEnd: 5
+  maxHallwayLength: 15
+  minHallwayLength: 3
+  maxDeadEnd: 29
   minDeadEnd: 0
   maxDeadEndLength: 20
   minDeadEndLength: 10

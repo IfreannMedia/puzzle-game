@@ -5,24 +5,57 @@ using UnityEngine;
 public class MazeManager : MonoBehaviour
 {
 
-    [SerializeField] private int 
-        maxLength = 100, minLength = 10, 
-        maxDeadEnd = 5, minDeadEnd = 0, 
-        maxDeadEndLength = 20, minDeadEndLength = 10;
-    [SerializeField] private Vector3 start;
+    [SerializeField]
+    [Range(50, 400)] 
+    private int maxLength = 100;
+
+    [SerializeField]
+    [Range(20, 200)] 
+    private int minLength = 20;
+
+    [SerializeField]
+    [Range(10, 40)]
+    private int maxHallwayLength = 20;
+
+    [SerializeField]
+    [Range(3, 10)]
+    private int minHallwayLength = 5;
+
+    [SerializeField]
+    [Range(5, 25)]
+    private int maxDeadEnd = 5;
+
+    [SerializeField]
+    [Range(0, 5)]
+    private int minDeadEnd = 0;
+
+    [SerializeField]
+    [Range(20, 40)]
+    private int maxDeadEndLength = 20;
+
+    [SerializeField]
+    [Range(3, 10)]
+    private int minDeadEndLength = 10;
+    [SerializeField] 
+    private Vector3 start;
+
     [SerializeField]
     private GameObject floorTile;
-    [SerializeField] BoxCollider mazeStart;
-    [SerializeField] BoxCollider mazeEnd;
+    
+    [SerializeField] 
+    BoxCollider mazeStart;
+    
+    [SerializeField] 
+    BoxCollider mazeEnd;
+    
     private List<GameObject> floorTiles = new List<GameObject>();
 
     private int mazeLength;
     private int deadEnds;
     private float tileWidth;
 
-    private int minHallwayLength, maxHallwayLength, currentHallwayLength;
+    private int currentHallwayLength;
     List<List<GameObject>> hallways = new List<List<GameObject>>();
-    // TODO looping paths/returning paths
 
     void Start()
     {
@@ -33,7 +66,7 @@ public class MazeManager : MonoBehaviour
     {
         this.generateHappyPath();
         this.placeMazeCollider(mazeStart, floorTiles[0]);
-        this.placeMazeCollider(mazeEnd, floorTiles[floorTiles.Count-1]);
+        this.placeMazeCollider(mazeEnd, floorTiles[floorTiles.Count - 1]);
     }
 
     private void placeMazeCollider(BoxCollider collider, GameObject targetTile)
@@ -54,17 +87,11 @@ public class MazeManager : MonoBehaviour
 
     private void positionHappyPath(List<List<GameObject>> hallways)
     {
-        // create initial hallway
-        // position first tile
-        // continue in second iteration loop
         for (int i = 0; i < hallways.Count; i++)
         {
             GameObject hallwayContainer = new GameObject("Hallway " + i);
             Instantiate(hallwayContainer, this.transform);
             Vector3 previousPosition = new Vector3();
-            // loop over each hallway
-            // if it's the first tile in a subsequent hallway,
-            // I need to check if a tile is already placed there
             DIRECTION hallwayDireciton = getDirection(previousPosition);
             for (int j = 0; j < hallways[i].Count; j++)
             {
@@ -98,7 +125,7 @@ public class MazeManager : MonoBehaviour
         switch (hallwayDireciton)
         {
             case DIRECTION.FRONT:
-                return Random.Range(0,2) == 0  ? DIRECTION.RIGHT : DIRECTION.LEFT;
+                return Random.Range(0, 2) == 0 ? DIRECTION.RIGHT : DIRECTION.LEFT;
             case DIRECTION.RIGHT:
                 return Random.Range(0, 2) == 0 ? DIRECTION.LEFT : DIRECTION.FRONT;
             case DIRECTION.LEFT:
@@ -112,14 +139,10 @@ public class MazeManager : MonoBehaviour
     {
         if (tileIndex != 0)
         {
-            // any hallway, not first element
-            // previous position is current hallway, previous element position
             return hallways[hallwayIndex][tileIndex - 1].GetComponent<Transform>().position;
         }
         else
         {
-            // any subsequent hallway, where j is first element
-            // position will be position of last element of previous hallway
             List<GameObject> previousHallway = hallways[hallwayIndex - 1];
             GameObject lastTile = previousHallway[previousHallway.Count - 1];
             return lastTile.GetComponent<Transform>().position;
@@ -198,7 +221,6 @@ public class MazeManager : MonoBehaviour
                 nextPosition = positionToLeft(previousPosition);
                 break;
         }
-        //return noTilePlacedHere(nextPosition) ? nextPosition : getNextFloorTilePosition(previousPosition, direction);
         return nextPosition;
     }
 
@@ -206,7 +228,7 @@ public class MazeManager : MonoBehaviour
     {
         for (int i = 0; i < floorTiles.Count; i++)
         {
-            if(floorTiles[i].GetComponent<Transform>().position == position)
+            if (floorTiles[i].GetComponent<Transform>().position == position)
             {
                 return false;
             }
@@ -240,8 +262,6 @@ public class MazeManager : MonoBehaviour
         mazeLength = Random.Range(minLength, maxLength);
         deadEnds = Random.Range(minDeadEnd, maxDeadEnd);
         tileWidth = this.floorTile.GetComponent<Transform>().lossyScale.x;
-        minHallwayLength = Random.Range(3, 6);
-        maxHallwayLength = Random.Range(6, 12);
     }
 }
 
