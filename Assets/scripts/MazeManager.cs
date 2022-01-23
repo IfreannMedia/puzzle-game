@@ -21,6 +21,7 @@ public class MazeManager : MonoBehaviour
     private float tileWidth;
 
     private int minHallwayLength, maxHallwayLength, currentHallwayLength;
+    List<List<GameObject>> hallways = new List<List<GameObject>>();
     // TODO looping paths/returning paths
 
     void Start()
@@ -47,51 +48,86 @@ public class MazeManager : MonoBehaviour
     private void generateHappyPath()
     {
         instantiateHappPathTiles();
-        List<List<GameObject>> hallways = splitHappyPathTilesIntoHallways();
+        splitHappyPathTilesIntoHallways();
         positionHappyPath(hallways);
     }
 
     private void positionHappyPath(List<List<GameObject>> hallways)
     {
+        // create initial hallway
+        // position first tile
+        // continue in second iteration loop
         for (int i = 0; i < hallways.Count; i++)
         {
             GameObject hallwayContainer = new GameObject("Hallway " + i);
             Instantiate(hallwayContainer, this.transform);
-            Vector3 previousPosition = start;
+            Vector3 previousPosition = new Vector3();
             // loop over each hallway
+            // if it's the first tile in a subsequent hallway,
+            // I need to check if a tile is already placed there
             DIRECTION hallwayDireciton = getDirection(previousPosition);
             for (int j = 0; j < hallways[i].Count; j++)
             {
-                hallways[i][j].GetComponent<Transform>().SetParent(hallwayContainer.GetComponent<Transform>());
-                hallways[i][j].GetComponent<Transform>().SetParent(this.transform);
-                // if at the first element of a hallway, the previous position is the position of the last element
-                // of the previous hallway
-                // otherwise proceed as normal
-                if (i == 0 && j == 0)
+                GameObject currentTile = hallways[i][j];
+                currentTile.GetComponent<Transform>().SetParent(hallwayContainer.GetComponent<Transform>());
+
+                bool isFirstTile = i == 0 && j == 0;
+                Vector3 tilePosition = new Vector3();
+                if (isFirstTile)
                 {
-                    // first hallway
-                    previousPosition = start;
+                    tilePosition = start;
                 }
-                else if (j != 0)
+                else
                 {
-                    // any hallway, not first element
-                    // previous position is current hallway, previous element position
-                    previousPosition = hallways[i][j - 1].GetComponent<Transform>().position;
+                    previousPosition = getPreviousPositionForCurrentTIle(hallways, i, j);
+                    tilePosition = this.getNextFloorTilePosition(previousPosition, hallwayDireciton);
+                    // check if second last tile position of previous hallway matches tile position
+                    if (i > 0 && hallways[i - 1][hallways[i - 1].Count - 2].transform.position == tilePosition)
+                    {
+                        hallwayDireciton = getDifferentDireciton(hallwayDireciton);
+                        tilePosition = this.getNextFloorTilePosition(previousPosition, hallwayDireciton);
+                    }
                 }
-                else if (i != 0 && j == 0)
-                {
-                    // any subsequent hallway, where j is first element
-                    // position will be position of last element of previous hallway
-                    previousPosition = hallways[i - 1][hallways[i - 1].Count - 1].GetComponent<Transform>().position;
-                }
-                hallways[i][j].GetComponent<Transform>().position = this.getNextFloorTilePosition(previousPosition, hallwayDireciton);
+                currentTile.GetComponent<Transform>().position = tilePosition;
             }
         }
     }
 
-    private List<List<GameObject>> splitHappyPathTilesIntoHallways()
+    private DIRECTION getDifferentDireciton(DIRECTION hallwayDireciton)
     {
-        List<List<GameObject>> hallways = new List<List<GameObject>>();
+        switch (hallwayDireciton)
+        {
+            case DIRECTION.FRONT:
+                return Random.Range(0,2) == 0  ? DIRECTION.RIGHT : DIRECTION.LEFT;
+            case DIRECTION.RIGHT:
+                return Random.Range(0, 2) == 0 ? DIRECTION.LEFT : DIRECTION.FRONT;
+            case DIRECTION.LEFT:
+                return Random.Range(0, 2) == 0 ? DIRECTION.RIGHT : DIRECTION.FRONT;
+            default:
+                return DIRECTION.RIGHT;
+        }
+    }
+
+    private Vector3 getPreviousPositionForCurrentTIle(List<List<GameObject>> hallways, int hallwayIndex, int tileIndex)
+    {
+        if (tileIndex != 0)
+        {
+            // any hallway, not first element
+            // previous position is current hallway, previous element position
+            return hallways[hallwayIndex][tileIndex - 1].GetComponent<Transform>().position;
+        }
+        else
+        {
+            // any subsequent hallway, where j is first element
+            // position will be position of last element of previous hallway
+            List<GameObject> previousHallway = hallways[hallwayIndex - 1];
+            GameObject lastTile = previousHallway[previousHallway.Count - 1];
+            return lastTile.GetComponent<Transform>().position;
+        }
+    }
+
+    private void splitHappyPathTilesIntoHallways()
+    {
         bool hallwaysLeft = true;
         int hallWayStart = 0;
         int hallwayEndCount;
@@ -117,8 +153,6 @@ public class MazeManager : MonoBehaviour
                 break;
             }
         }
-
-        return hallways;
     }
 
     private void instantiateHappPathTiles()
@@ -144,8 +178,9 @@ public class MazeManager : MonoBehaviour
                 return noTilePlacedHere(previousPosition) ? DIRECTION.RIGHT : getDirection(previousPosition);
             case 2:
                 return noTilePlacedHere(previousPosition) ? DIRECTION.LEFT : getDirection(previousPosition);
+            default:
+                return DIRECTION.FRONT;
         }
-        return DIRECTION.FRONT;
     }
 
     private Vector3 getNextFloorTilePosition(Vector3 previousPosition, DIRECTION direction)
